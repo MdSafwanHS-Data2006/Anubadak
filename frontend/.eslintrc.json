@@ -1,0 +1,29 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "varsIgnorePattern": "^([A-Z]|_)",
+        "argsIgnorePattern": "^_"
+      }
+    ],
+    "no-undef": "error",
+    "no-debugger": "error",
+    "no-dupe-keys": "error",
+    "no-unreachable": "error",
+    "eqeqeq": ["error", "always"]
+  }
+}

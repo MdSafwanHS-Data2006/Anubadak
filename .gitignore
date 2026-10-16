@@ -1,0 +1,38 @@
+# Environment configuration (never commit real .env files)
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Python virtual environments & caches
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Frontend dependencies & build outputs
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/

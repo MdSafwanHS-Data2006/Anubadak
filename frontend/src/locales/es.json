@@ -1,0 +1,91 @@
+{
+  "app": {
+    "title": "Anubadak",
+    "bengaliTitle": "অনুবাদক",
+    "subtitle": "Estudio de Traducción Multilingüe",
+    "uiLanguageLabel": "Idioma de la interfaz",
+    "aboutButton": "Acerca de y Ayuda",
+    "closeButton": "Cerrar"
+  },
+  "languages": {
+    "en": "Inglés (English)",
+    "bn": "Bengalí (বাংলা)",
+    "es": "Español (Spanish)"
+  },
+  "controls": {
+    "sourceLanguage": "Idioma de origen",
+    "targetLanguage": "Idioma de destino",
+    "swapLanguages": "Intercambiar idiomas",
+    "swapTooltip": "Intercambiar idioma de origen y destino",
+    "translate": "Traducir",
+    "translating": "Traduciendo...",
+    "retry": "Reintentar traducción",
+    "clear": "Limpiar",
+    "clearAria": "Limpiar texto de origen",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "copyAria": "Copiar texto traducido",
+    "listenSource": "Escuchar",
+    "listenTarget": "Escuchar",
+    "listenSourceAria": "Escuchar texto de origen",
+    "listenTargetAria": "Escuchar texto traducido",
+    "stopSpeech": "Detener",
+    "stopSpeechAria": "Detener pronunciación",
+    "speechSpeed": "Velocidad de voz",
+    "samplePhrases": "Prueba rápida:"
+  },
+  "panels": {
+    "sourceHeader": "Texto de origen",
+    "targetHeader": "Traducción",
+    "sourcePlaceholder": "Escribe o pega el texto para traducir (Pulsa Enter para traducir, Shift+Enter para nueva línea)...",
+    "targetPlaceholder": "Tu traducción aparecerá aquí.",
+    "emptyOutputHint": "Selecciona los idiomas, introduce el texto a la izquierda y haz clic en Traducir.",
+    "charCount": "{chars} caracteres",
+    "byteCount": "{bytes} / {maxBytes} bytes UTF-8",
+    "byteLimitWarning": "Supera el límite de 500 bytes UTF-8"
+  },
+  "speech": {
+    "voiceAvailable": "Voz lista ({voiceName})",
+    "voiceUnavailable": "La voz en {lang} no está disponible en este navegador",
+    "bengaliUnavailableDetail": "Tu navegador o sistema operativo no expone una voz genuina en bengalí (bn / bn-BD / bn-IN). La traducción y la copia siguen funcionando con normalidad.",
+    "generalUnavailableDetail": "Tu navegador no expone actualmente una voz para {lang}. La traducción sigue funcionando con normalidad.",
+    "speechUnsupported": "La síntesis de voz no es compatible con este navegador.",
+    "playbackError": "No se pudo completar la reproducción de voz en este navegador."
+  },
+  "clipboard": {
+    "copiedSuccess": "Traducción copiada al portapapeles.",
+    "manualFallback": "El acceso automático al portapapeles fue bloqueado. Se ha seleccionado el texto traducido: pulsa Ctrl+C (o Cmd+C) para copiarlo."
+  },
+  "errors": {
+    "EMPTY_TEXT": "Por favor, introduce algún texto antes de traducir.",
+    "TEXT_TOO_LONG": "El texto supera el límite de 500 bytes UTF-8. Acorta el texto (los caracteres en bengalí ocupan 3 bytes UTF-8 cada uno).",
+    "UNSUPPORTED_SOURCE_LANG": "Selecciona un idioma de origen compatible (inglés, bengalí o español).",
+    "UNSUPPORTED_TARGET_LANG": "Selecciona un idioma de destino compatible (inglés, bengalí o español).",
+    "IDENTICAL_LANGUAGES": "El idioma de origen y el de destino deben ser diferentes.",
+    "QUOTA_EXHAUSTED": "Se ha alcanzado la cuota diaria gratuita de traducción. Inténtalo más tarde.",
+    "PROVIDER_UNAVAILABLE": "El servicio de traducción no está disponible temporalmente. Tu texto se ha conservado; vuelve a intentarlo en unos momentos.",
+    "TRANSLATION_TIMEOUT": "La solicitud de traducción agotó el tiempo de espera. Comprueba tu conexión y vuelve a intentarlo.",
+    "NETWORK_ERROR": "No se pudo conectar con el servidor de traducción. Verifica que el backend esté activo y tu red conectada.",
+    "OFFLINE_ERROR": "Parece que estás sin conexión. Conéctate a Internet y vuelve a intentarlo.",
+    "INVALID_PROVIDER_RESPONSE": "El proveedor devolvió una respuesta no válida. Vuelve a intentarlo.",
+    "TRANSLATION_UNAVAILABLE": "No se pudo obtener una traducción verificada en el alfabeto de destino.",
+    "RATE_LIMITED": "Demasiadas solicitudes seguidas. Espera unos segundos antes de volver a intentarlo.",
+    "INTERNAL_ERROR": "Ocurrió un error inesperado en el servidor. Vuelve a intentarlo."
+  },
+  "about": {
+    "title": "Acerca de Anubadak (অনুবাদক)",
+    "overviewTitle": "Cómo funciona la traducción",
+    "overviewBody": "Anubadak traduce entre inglés (en), bengalí (bn) y español (es) en las seis direcciones mediante un backend FastAPI conectado a la API alojada de MyMemory.",
+    "limitsTitle": "Límite de tamaño y uso",
+    "limitsBody": "Cada consulta admite hasta 500 bytes UTF-8. Como los caracteres Unicode en bengalí suelen ocupar 3 bytes en UTF-8, el contador muestra tanto los caracteres como el uso exacto de bytes UTF-8.",
+    "speechTitle": "Pronunciación y voz en bengalí",
+    "speechBody": "Anubadak inspecciona en tiempo real las voces de Web Speech API (bn, bn-BD, bn-IN). Nunca utiliza una voz en inglés o español para pronunciar texto en bengalí. Cuando el navegador no dispone de voz bengalí, el botón Escuchar se desactiva de forma transparente.",
+    "shortcutsTitle": "Atajos de teclado",
+    "shortcutEnter": "Enter en el cuadro de texto: Enviar traducción",
+    "shortcutShiftEnter": "Shift + Enter: Insertar salto de línea"
+  },
+  "footer": {
+    "tagline": "Anubadak (অনুবাদক) • Traductor Web Multilingüe Multiplataforma",
+    "languagesSupported": "English • বাংলা • Español"
+  }
+}

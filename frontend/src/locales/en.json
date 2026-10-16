@@ -1,0 +1,91 @@
+{
+  "app": {
+    "title": "Anubadak",
+    "bengaliTitle": "অনুবাদক",
+    "subtitle": "Multilingual Translation Studio",
+    "uiLanguageLabel": "Interface Language",
+    "aboutButton": "About & Help",
+    "closeButton": "Close"
+  },
+  "languages": {
+    "en": "English",
+    "bn": "Bengali (বাংলা)",
+    "es": "Spanish (Español)"
+  },
+  "controls": {
+    "sourceLanguage": "Source language",
+    "targetLanguage": "Target language",
+    "swapLanguages": "Swap languages",
+    "swapTooltip": "Swap source and target languages",
+    "translate": "Translate",
+    "translating": "Translating...",
+    "retry": "Retry Translation",
+    "clear": "Clear",
+    "clearAria": "Clear source text",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "copyAria": "Copy translated text",
+    "listenSource": "Listen",
+    "listenTarget": "Listen",
+    "listenSourceAria": "Listen to source text",
+    "listenTargetAria": "Listen to translated text",
+    "stopSpeech": "Stop",
+    "stopSpeechAria": "Stop speaking",
+    "speechSpeed": "Speech rate",
+    "samplePhrases": "Quick try:"
+  },
+  "panels": {
+    "sourceHeader": "Source Text",
+    "targetHeader": "Translation",
+    "sourcePlaceholder": "Enter or paste text to translate (Press Enter to translate, Shift+Enter for a new line)...",
+    "targetPlaceholder": "Your translation will appear here.",
+    "emptyOutputHint": "Select your languages, enter text on the left, and click Translate.",
+    "charCount": "{chars} chars",
+    "byteCount": "{bytes} / {maxBytes} UTF-8 bytes",
+    "byteLimitWarning": "Over the 500 UTF-8 byte limit"
+  },
+  "speech": {
+    "voiceAvailable": "Voice ready ({voiceName})",
+    "voiceUnavailable": "{lang} speech is unavailable in this browser",
+    "bengaliUnavailableDetail": "No genuine Bengali (bn / bn-BD / bn-IN) speech synthesizer voice was exposed by your browser or operating system. Translation and copying continue to work normally.",
+    "generalUnavailableDetail": "No {lang} speech voice is currently exposed by your browser. Translation and copying continue to work normally.",
+    "speechUnsupported": "Browser speech synthesis is not supported in this environment.",
+    "playbackError": "Speech playback could not be completed in this browser."
+  },
+  "clipboard": {
+    "copiedSuccess": "Translation copied to clipboard.",
+    "manualFallback": "Automatic clipboard access was blocked. The translated text has been selected—press Copy or use Ctrl+C / Cmd+C to copy."
+  },
+  "errors": {
+    "EMPTY_TEXT": "Please enter some text before translating.",
+    "TEXT_TOO_LONG": "Input exceeds the 500 UTF-8 byte limit. Please shorten your text (Bengali characters use 3 UTF-8 bytes each).",
+    "UNSUPPORTED_SOURCE_LANG": "Please choose a supported source language (English, Bengali, or Spanish).",
+    "UNSUPPORTED_TARGET_LANG": "Please choose a supported target language (English, Bengali, or Spanish).",
+    "IDENTICAL_LANGUAGES": "Source and target languages must be different.",
+    "QUOTA_EXHAUSTED": "The daily free translation quota has been reached. Please try again later or configure an email in the backend.",
+    "PROVIDER_UNAVAILABLE": "The translation service is temporarily unavailable. Your input is preserved—please try again shortly.",
+    "TRANSLATION_TIMEOUT": "The translation request timed out. Please check your connection and retry.",
+    "NETWORK_ERROR": "Could not reach the translation server. Check that the backend is running and your network is connected.",
+    "OFFLINE_ERROR": "You appear to be offline. Please reconnect to the internet and try again.",
+    "INVALID_PROVIDER_RESPONSE": "The translation provider returned an invalid response. Please retry.",
+    "TRANSLATION_UNAVAILABLE": "A verified translation could not be produced for this input in the target script.",
+    "RATE_LIMITED": "Too many translation requests in a short period. Please wait a moment and try again.",
+    "INTERNAL_ERROR": "An unexpected server error occurred. Please try again."
+  },
+  "about": {
+    "title": "About Anubadak (অনুবাদক)",
+    "overviewTitle": "How Translation Works",
+    "overviewBody": "Anubadak translates between English (en), Bengali (bn), and Spanish (es) across all six language directions via a FastAPI backend connected to the hosted MyMemory Translation API.",
+    "limitsTitle": "Input Size & Usage Notes",
+    "limitsBody": "Each translation request supports up to 500 UTF-8 bytes. Because Bengali Unicode characters occupy 3 bytes each in UTF-8, the byte counter tracks exact UTF-8 byte usage alongside character count. Daily request volume is subject to the upstream provider's free-tier policy.",
+    "speechTitle": "Bengali Speech & Pronunciation",
+    "speechBody": "Anubadak inspects your browser's real Web Speech API voices (bn, bn-BD, bn-IN) at runtime. It never substitutes an English or Spanish voice to read Bengali text. Whenever a browser or operating system does not expose a native Bengali voice, the Listen button for Bengali is honestly disabled with a clear explanation.",
+    "shortcutsTitle": "Keyboard Shortcuts",
+    "shortcutEnter": "Enter inside source box: Submit translation",
+    "shortcutShiftEnter": "Shift + Enter: Insert a new line"
+  },
+  "footer": {
+    "tagline": "Anubadak (অনুবাদক) • Cross-Platform Multilingual Web Translator",
+    "languagesSupported": "English • বাংলা • Español"
+  }
+}
