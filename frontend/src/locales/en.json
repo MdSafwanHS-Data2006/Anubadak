@@ -7,6 +7,15 @@
     "aboutButton": "About & Help",
     "closeButton": "Close"
   },
+  "theme": {
+    "themeLabel": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme",
+    "switchToSystem": "Follow system theme"
+  },
   "languages": {
     "en": "English",
     "bn": "Bengali (বাংলা)",

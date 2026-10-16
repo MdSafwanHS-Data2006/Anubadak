@@ -31,6 +31,7 @@ import {
 import { copyTextUniversal } from '../src/utils/clipboard.js';
 import { createRequestTracker } from '../src/utils/raceGuard.js';
 import { ApiTranslationError, requestTranslation } from '../src/services/api.js';
+import { resolveTheme } from '../src/hooks/useTheme.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -249,6 +250,26 @@ await runTest('All three locale files (en, bn, es) contain matching top-level an
 
   assert.deepEqual(enKeys, bnKeys, 'en.json and bn.json keys must match');
   assert.deepEqual(enKeys, esKeys, 'en.json and es.json keys must match');
+});
+
+await runTest('Theme resolver correctly computes effective theme across explicit and system preferences', () => {
+  assert.equal(resolveTheme('light', 'dark'), 'light');
+  assert.equal(resolveTheme('light', 'light'), 'light');
+  assert.equal(resolveTheme('dark', 'light'), 'dark');
+  assert.equal(resolveTheme('dark', 'dark'), 'dark');
+  assert.equal(resolveTheme('system', 'light'), 'light');
+  assert.equal(resolveTheme('system', 'dark'), 'dark');
+
+  // Verify theme localization entries
+  assert.equal(typeof enLocale.theme?.light, 'string');
+  assert.equal(typeof bnLocale.theme?.light, 'string');
+  assert.equal(typeof esLocale.theme?.light, 'string');
+  assert.equal(typeof enLocale.theme?.dark, 'string');
+  assert.equal(typeof bnLocale.theme?.dark, 'string');
+  assert.equal(typeof esLocale.theme?.dark, 'string');
+  assert.equal(typeof enLocale.theme?.system, 'string');
+  assert.equal(typeof bnLocale.theme?.system, 'string');
+  assert.equal(typeof esLocale.theme?.system, 'string');
 });
 
 if (!isVitest) {

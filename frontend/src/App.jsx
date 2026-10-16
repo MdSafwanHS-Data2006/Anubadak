@@ -6,6 +6,7 @@ import SpeechControls from './components/SpeechControls';
 import AboutModal from './components/AboutModal';
 import Footer from './components/Footer';
 import { useSpeech } from './hooks/useSpeech';
+import { useTheme } from './hooks/useTheme';
 import { useTranslation } from './hooks/useTranslation';
 import { copyTextUniversal } from './utils/clipboard';
 import { t } from './utils/i18n';
@@ -43,6 +44,7 @@ export default function App() {
   const [uiLang, setUiLang] = useState('en');
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState(null); // 'copied' | 'manual_fallback' | null
+  const { themePreference, selectTheme } = useTheme();
   const outputRef = useRef(null);
   const copyTimerRef = useRef(null);
 
@@ -129,6 +131,8 @@ export default function App() {
           uiLang={uiLang}
           onSelectUiLang={setUiLang}
           onOpenAbout={() => setIsAboutOpen(true)}
+          themePreference={themePreference}
+          onSelectTheme={selectTheme}
         />
 
         <main className="main-workspace">

@@ -7,7 +7,19 @@ const UI_LOCALES = [
   { code: 'es', label: 'ES', fullName: 'Español' },
 ];
 
-export default function Header({ uiLang, onSelectUiLang, onOpenAbout }) {
+const THEME_OPTIONS = [
+  { mode: 'light', icon: '☀️', key: 'light', actionKey: 'switchToLight' },
+  { mode: 'dark', icon: '🌙', key: 'dark', actionKey: 'switchToDark' },
+  { mode: 'system', icon: '💻', key: 'system', actionKey: 'switchToSystem' },
+];
+
+export default function Header({
+  uiLang,
+  onSelectUiLang,
+  onOpenAbout,
+  themePreference = 'system',
+  onSelectTheme = () => {},
+}) {
   return (
     <header className="app-header glass-surface">
       <div className="brand-group">
@@ -28,6 +40,30 @@ export default function Header({ uiLang, onSelectUiLang, onOpenAbout }) {
       </div>
 
       <div className="header-actions">
+        <div
+          className="theme-switcher"
+          role="group"
+          aria-label={t(uiLang, 'theme.themeLabel')}
+        >
+          {THEME_OPTIONS.map((opt) => {
+            const active = themePreference === opt.mode;
+            return (
+              <button
+                key={opt.mode}
+                type="button"
+                className={`theme-btn ${active ? 'theme-btn-active' : ''}`}
+                aria-pressed={active}
+                title={t(uiLang, `theme.${opt.actionKey}`)}
+                onClick={() => onSelectTheme(opt.mode)}
+                data-testid={`theme-btn-${opt.mode}`}
+              >
+                <span className="theme-btn-icon" aria-hidden="true">{opt.icon}</span>
+                <span className="theme-btn-text">{t(uiLang, `theme.${opt.key}`)}</span>
+              </button>
+            );
+          })}
+        </div>
+
         <div
           className="ui-lang-switcher"
           role="group"

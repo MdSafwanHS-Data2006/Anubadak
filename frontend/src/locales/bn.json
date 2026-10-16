@@ -7,6 +7,15 @@
     "aboutButton": "তথ্য ও সহায়তা",
     "closeButton": "বন্ধ করুন"
   },
+  "theme": {
+    "themeLabel": "থিম",
+    "light": "লাইট",
+    "dark": "ডার্ক",
+    "system": "সিস্টেম",
+    "switchToLight": "লাইট থিম চালু করুন",
+    "switchToDark": "ডার্ক থিম চালু করুন",
+    "switchToSystem": "সিস্টেম থিম অনুসরণ করুন"
+  },
   "languages": {
     "en": "ইংরেজি (English)",
     "bn": "বাংলা (Bengali)",

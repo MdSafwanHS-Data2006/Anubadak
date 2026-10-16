@@ -9,6 +9,28 @@
     />
     <meta name="theme-color" content="#071426" />
     <title>Anubadak (অনুবাদক) — Multilingual Translator</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('anubadak_theme') || 'system';
+          var resolved = stored;
+          if (stored === 'system') {
+            resolved =
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          }
+          document.documentElement.setAttribute('data-theme', resolved);
+          document.documentElement.setAttribute('data-theme-setting', stored);
+          document.documentElement.style.colorScheme = resolved;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) {
+            meta.setAttribute('content', resolved === 'light' ? '#f0f4f9' : '#071426');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
