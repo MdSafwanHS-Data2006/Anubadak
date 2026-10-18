@@ -28,6 +28,7 @@
     "swapTooltip": "Intercambiar idioma de origen y destino",
     "translate": "Traducir",
     "translating": "Traduciendo...",
+    "wakingUp": "Iniciando el servidor de traducción; esto puede tardar un poco más...",
     "retry": "Reintentar traducción",
     "clear": "Limpiar",
     "clearAria": "Limpiar texto de origen",

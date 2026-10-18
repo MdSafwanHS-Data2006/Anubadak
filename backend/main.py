@@ -153,6 +153,7 @@ def create_app(
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "Accept"],
+        max_age=600,
     )
 
     @app.exception_handler(TranslationError)

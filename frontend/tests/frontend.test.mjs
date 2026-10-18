@@ -30,7 +30,15 @@ import {
 } from '../src/utils/speech.js';
 import { copyTextUniversal } from '../src/utils/clipboard.js';
 import { createRequestTracker } from '../src/utils/raceGuard.js';
-import { ApiTranslationError, requestTranslation } from '../src/services/api.js';
+import {
+  DEFAULT_TIMEOUT_MS,
+  ApiTranslationError,
+  checkBackendHealth,
+  getApiBaseUrl,
+  getServerHealthState,
+  requestTranslation,
+  resetServerHealthStateForTesting,
+} from '../src/services/api.js';
 import { resolveTheme } from '../src/hooks/useTheme.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -167,7 +175,11 @@ await runTest('Request tracker cancels obsolete requests and protects against ou
   assert.equal(tracker.isCurrent(req2.requestId), false);
 });
 
-await runTest('API service maps backend translations, quota errors, and timeouts accurately', async () => {
+await runTest('DEFAULT_TIMEOUT_MS is configured to 65000 to accommodate Render cold starts', () => {
+  assert.equal(DEFAULT_TIMEOUT_MS, 65000);
+});
+
+await runTest('API service maps backend translations, quota errors, timeouts, and network failures accurately', async () => {
   // Successful translation
   const mockSuccessFetch = async (_url, options) => {
     const body = JSON.parse(options.body);
@@ -191,6 +203,7 @@ await runTest('API service maps backend translations, quota errors, and timeouts
   });
   assert.equal(result.translatedText, 'শুভ সকাল');
   assert.equal(result.provider, 'mymemory');
+  assert.equal(getServerHealthState().status, 'ready');
 
   // Quota exhausted (HTTP 429)
   const mockQuotaFetch = async () => ({
@@ -211,6 +224,150 @@ await runTest('API service maps backend translations, quota errors, and timeouts
       }),
     (err) => err instanceof ApiTranslationError && err.code === 'QUOTA_EXHAUSTED'
   );
+
+  // Upstream Provider Timeout (HTTP 504 from backend)
+  const mock504Fetch = async () => ({
+    ok: false,
+    status: 504,
+    json: async () => ({
+      error: { code: 'TRANSLATION_TIMEOUT', message: 'Provider timed out' },
+    }),
+  });
+
+  await assert.rejects(
+    () =>
+      requestTranslation({
+        text: 'Hello',
+        sourceLang: 'en',
+        targetLang: 'bn',
+        fetchImpl: mock504Fetch,
+      }),
+    (err) => err instanceof ApiTranslationError && err.code === 'TRANSLATION_TIMEOUT' && err.status === 504
+  );
+
+  // Client-side Request Timeout (e.g. backend sleeping or network drop)
+  const mockHangingFetch = (_url, options) =>
+    new Promise((_resolve, reject) => {
+      if (options.signal) {
+        options.signal.addEventListener('abort', () => {
+          const abortErr = new Error('The operation was aborted');
+          abortErr.name = 'AbortError';
+          reject(abortErr);
+        });
+      }
+    });
+
+  await assert.rejects(
+    () =>
+      requestTranslation({
+        text: 'Hello',
+        sourceLang: 'en',
+        targetLang: 'bn',
+        timeoutMs: 25,
+        fetchImpl: mockHangingFetch,
+      }),
+    (err) => err instanceof ApiTranslationError && err.code === 'TRANSLATION_TIMEOUT' && err.status === 504
+  );
+
+  // Network / CORS preflight error (fetch throws TypeError)
+  const mockNetworkErrorFetch = async () => {
+    throw new TypeError('Failed to fetch');
+  };
+
+  await assert.rejects(
+    () =>
+      requestTranslation({
+        text: 'Hello',
+        sourceLang: 'en',
+        targetLang: 'bn',
+        fetchImpl: mockNetworkErrorFetch,
+      }),
+    (err) => err instanceof ApiTranslationError && err.code === 'NETWORK_ERROR'
+  );
+
+  // Invalid / malformed provider response (HTTP 502)
+  const mock502Fetch = async () => ({
+    ok: false,
+    status: 502,
+    json: async () => ({
+      error: { code: 'INVALID_PROVIDER_RESPONSE', message: 'Malformed provider data' },
+    }),
+  });
+
+  await assert.rejects(
+    () =>
+      requestTranslation({
+        text: 'Hello',
+        sourceLang: 'en',
+        targetLang: 'bn',
+        fetchImpl: mock502Fetch,
+      }),
+    (err) => err instanceof ApiTranslationError && err.code === 'INVALID_PROVIDER_RESPONSE'
+  );
+});
+
+await runTest('checkBackendHealth accurately probes /health and updates server state', async () => {
+  resetServerHealthStateForTesting();
+  assert.equal(getServerHealthState().status, 'unknown');
+
+  const mockHealthFetch = async (url) => {
+    assert.match(url, /\/health$/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: 'ok',
+        provider: 'mymemory',
+        supported_languages: ['en', 'bn', 'es'],
+        email_configured: false,
+        max_utf8_bytes: 500,
+      }),
+    };
+  };
+
+  const healthRes = await checkBackendHealth({ fetchImpl: mockHealthFetch, timeoutMs: 1000 });
+  assert.equal(healthRes.ok, true);
+  assert.equal(healthRes.data.status, 'ok');
+  assert.equal(getServerHealthState().status, 'ready');
+
+  // Failed health check sets error state
+  const mockFailingHealthFetch = async () => ({
+    ok: false,
+    status: 503,
+  });
+  const failRes = await checkBackendHealth({ fetchImpl: mockFailingHealthFetch, timeoutMs: 1000 });
+  assert.equal(failRes.ok, false);
+  assert.equal(getServerHealthState().status, 'error');
+});
+
+await runTest('Byte counter and validator safely handle emojis, punctuation, contractions, and line breaks', () => {
+  // Multiline with contractions and punctuation
+  const multiline = "Don't worry!\nIt's a beautiful day.\nAre we ready? Yes! 😊";
+  const valRes = validateTranslationRequest(multiline, 'en', 'bn');
+  assert.equal(valRes.valid, true);
+
+  // Emoji sequences (each emoji takes 4 UTF-8 bytes)
+  const emojis = '😊🌟🎉🚀';
+  assert.equal(getCharacterCount(emojis), 4);
+  assert.equal(getUtf8ByteLength(emojis), 16);
+
+  // Exact 500 UTF-8 bytes with mixed Bengali Unicode (3 bytes each) + emojis (4 bytes each)
+  // 160 Bengali chars (480 bytes) + 5 emojis (20 bytes) = 500 bytes (valid)
+  const exact500 = 'ক'.repeat(160) + '😊'.repeat(5);
+  assert.equal(getUtf8ByteLength(exact500), 500);
+  assert.equal(validateTranslationRequest(exact500, 'bn', 'en').valid, true);
+
+  // 501 bytes: 160*3=480 + 5*4=20 + 'a'=1 -> 501 bytes (invalid)
+  const over501 = exact500 + 'a';
+  assert.equal(getUtf8ByteLength(over501), 501);
+  const overRes = validateTranslationRequest(over501, 'bn', 'en');
+  assert.equal(overRes.valid, false);
+  assert.equal(overRes.errorCode, 'TEXT_TOO_LONG');
+});
+
+await runTest('API base URL resolution normalizes trailing slashes', () => {
+  const url = getApiBaseUrl();
+  assert.equal(url.endsWith('/'), false, 'getApiBaseUrl must never end with a trailing slash');
 });
 
 await runTest('Universal clipboard utility reports success only when writeText resolves and falls back cleanly', async () => {

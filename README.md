@@ -163,9 +163,9 @@ Open **`http://localhost:5173`** in your browser.
 
 | Variable | Default | Purpose |
 | :--- | :--- | :--- |
-| `ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated list of allowed frontend URLs for CORS. |
+| `ALLOWED_ORIGINS` | `https://anubadak.vercel.app,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173` | Comma-separated list of allowed frontend URLs for CORS. |
 | `MYMEMORY_EMAIL` | *(empty)* | Optional contact email for MyMemory to increase the free daily limit (~50,000 characters). |
-| `REQUEST_TIMEOUT_SECONDS` | `10.0` | Timeout for outbound translation requests. |
+| `REQUEST_TIMEOUT_SECONDS` | `15.0` | Timeout for outbound translation requests. |
 | `RATE_LIMIT_REQUESTS` | `30` | Maximum requests allowed per IP address within the rate-limit window. |
 | `RATE_LIMIT_WINDOW_SECONDS` | `60` | Duration of the rate-limit sliding window in seconds. |
 

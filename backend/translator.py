@@ -480,16 +480,20 @@ class MyMemoryProvider(TranslationProvider):
 
     async def _fetch_payload(self, params: Dict[str, str]) -> Dict[str, Any]:
         """Execute asynchronous GET request to MyMemory and parse JSON response."""
+        timeout_config = httpx.Timeout(
+            timeout=self._settings.request_timeout_seconds,
+            connect=self._settings.connect_timeout_seconds,
+        )
         try:
             if self._http_client is not None:
                 response = await self._http_client.get(
                     self._settings.mymemory_api_url,
                     params=params,
-                    timeout=self._settings.request_timeout_seconds,
+                    timeout=timeout_config,
                 )
             else:
                 async with httpx.AsyncClient(
-                    timeout=self._settings.request_timeout_seconds
+                    timeout=timeout_config
                 ) as client:
                     response = await client.get(
                         self._settings.mymemory_api_url,

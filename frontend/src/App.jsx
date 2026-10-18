@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import BackgroundTypography from './components/BackgroundTypography';
 import Header from './components/Header';
 import LanguageBar from './components/LanguageBar';
@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import { useSpeech } from './hooks/useSpeech';
 import { useTheme } from './hooks/useTheme';
 import { useTranslation } from './hooks/useTranslation';
+import { checkBackendHealth } from './services/api';
 import { copyTextUniversal } from './utils/clipboard';
 import { t } from './utils/i18n';
 
@@ -71,12 +72,18 @@ export default function App() {
     clearCopyNotice();
   }, [clearCopyNotice, stopSpeech]);
 
+  useEffect(() => {
+    // Proactively warm up backend if sleeping (e.g. Render free tier cold start)
+    checkBackendHealth().catch(() => {});
+  }, []);
+
   const {
     sourceLang,
     targetLang,
     sourceText,
     translatedText,
     isLoading,
+    isWakingUp,
     errorCode,
     byteCount,
     charCount,
@@ -294,7 +301,11 @@ export default function App() {
                   <div className="loading-state" role="status" data-testid="loading-indicator">
                     <div className="loading-shimmer-line loading-line-1" />
                     <div className="loading-shimmer-line loading-line-2" />
-                    <p className="loading-status-text">{t(uiLang, 'controls.translating')}</p>
+                    <p className="loading-status-text">
+                      {isWakingUp
+                        ? t(uiLang, 'controls.wakingUp')
+                        : t(uiLang, 'controls.translating')}
+                    </p>
                   </div>
                 )}
 

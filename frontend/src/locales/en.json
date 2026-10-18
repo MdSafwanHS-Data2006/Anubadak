@@ -28,6 +28,7 @@
     "swapTooltip": "Swap source and target languages",
     "translate": "Translate",
     "translating": "Translating...",
+    "wakingUp": "Waking up the translation server; this may take a little longer...",
     "retry": "Retry Translation",
     "clear": "Clear",
     "clearAria": "Clear source text",

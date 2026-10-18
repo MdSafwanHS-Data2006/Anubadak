@@ -3,8 +3,97 @@
  * Never embeds provider API credentials in frontend code.
  */
 
-const DEFAULT_API_BASE_URL = 'http://localhost:8000';
-const DEFAULT_TIMEOUT_MS = 12000;
+export const DEFAULT_API_BASE_URL = 'http://localhost:8000';
+export const DEFAULT_TIMEOUT_MS = 65000;
+
+let _serverHealthState = {
+  status: 'unknown', // 'unknown' | 'waking_up' | 'ready' | 'error'
+  lastChecked: 0,
+  latencyMs: null,
+  data: null,
+};
+
+export function getServerHealthState() {
+  return { ..._serverHealthState };
+}
+
+export function resetServerHealthStateForTesting() {
+  _serverHealthState = {
+    status: 'unknown',
+    lastChecked: 0,
+    latencyMs: null,
+    data: null,
+  };
+}
+
+/**
+ * Perform a background health check and pre-warm the backend if sleeping.
+ *
+ * @param {{ fetchImpl?: typeof fetch, timeoutMs?: number }} [options]
+ * @returns {Promise<{ ok: boolean, data?: any, latencyMs?: number, status?: number, error?: any }>}
+ */
+export async function checkBackendHealth({ fetchImpl, timeoutMs = 60000 } = {}) {
+  const activeFetch = fetchImpl || (typeof fetch !== 'undefined' ? fetch : null);
+  if (!activeFetch) return { ok: false, error: 'NO_FETCH' };
+
+  _serverHealthState = {
+    ..._serverHealthState,
+    status: 'waking_up',
+  };
+  const startTime = Date.now();
+
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = setTimeout(() => {
+    if (controller) {
+      try {
+        controller.abort();
+      } catch (_err) {
+        // Ignore abort errors
+      }
+    }
+  }, timeoutMs);
+
+  try {
+    const res = await activeFetch(`${getApiBaseUrl()}/health`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller ? controller.signal : undefined,
+    });
+    clearTimeout(timer);
+    const latency = Date.now() - startTime;
+    if (res.ok) {
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (_jsonErr) {
+        data = null;
+      }
+      _serverHealthState = {
+        status: 'ready',
+        lastChecked: Date.now(),
+        latencyMs: latency,
+        data,
+      };
+      return { ok: true, data, latencyMs: latency };
+    }
+    _serverHealthState = {
+      status: 'error',
+      lastChecked: Date.now(),
+      latencyMs: latency,
+      data: null,
+    };
+    return { ok: false, status: res.status };
+  } catch (err) {
+    clearTimeout(timer);
+    _serverHealthState = {
+      status: 'error',
+      lastChecked: Date.now(),
+      latencyMs: Date.now() - startTime,
+      data: null,
+    };
+    return { ok: false, error: err };
+  }
+}
 
 /**
  * Resolve the configured backend API base URL without trailing slash.
@@ -171,6 +260,12 @@ export async function requestTranslation({
         502
       );
     }
+
+    _serverHealthState = {
+      ..._serverHealthState,
+      status: 'ready',
+      lastChecked: Date.now(),
+    };
 
     return {
       translatedText: payload.translated_text,

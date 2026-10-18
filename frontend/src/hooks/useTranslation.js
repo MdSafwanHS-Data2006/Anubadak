@@ -13,7 +13,11 @@ import {
   validateTranslationRequest,
 } from '../utils/utf8';
 import { createRequestTracker } from '../utils/raceGuard';
-import { ApiTranslationError, requestTranslation } from '../services/api';
+import {
+  ApiTranslationError,
+  getServerHealthState,
+  requestTranslation,
+} from '../services/api';
 
 export function useTranslation({ onInvalidateSpeech } = {}) {
   const [sourceLang, setSourceLangState] = useState('en');
@@ -21,22 +25,33 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
   const [sourceText, setSourceTextState] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isWakingUp, setIsWakingUp] = useState(false);
   const [errorCode, setErrorCode] = useState(null);
 
   const trackerRef = useRef(null);
   if (!trackerRef.current) {
     trackerRef.current = createRequestTracker();
   }
+  const wakeUpTimerRef = useRef(null);
+
+  const clearWakeUpTimer = useCallback(() => {
+    if (wakeUpTimerRef.current) {
+      clearTimeout(wakeUpTimerRef.current);
+      wakeUpTimerRef.current = null;
+    }
+    setIsWakingUp(false);
+  }, []);
 
   const invalidateInFlightAndOutput = useCallback(() => {
     trackerRef.current.invalidate();
+    clearWakeUpTimer();
     setIsLoading(false);
     setTranslatedText('');
     setErrorCode(null);
     if (typeof onInvalidateSpeech === 'function') {
       onInvalidateSpeech();
     }
-  }, [onInvalidateSpeech]);
+  }, [clearWakeUpTimer, onInvalidateSpeech]);
 
   const setSourceText = useCallback(
     (nextText) => {
@@ -44,6 +59,7 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
       setSourceTextState(value);
       // Invalidate any pending request or stale translation immediately when input changes
       trackerRef.current.invalidate();
+      clearWakeUpTimer();
       setIsLoading(false);
       setTranslatedText('');
       if (getUtf8ByteLength(value) > MAX_UTF8_BYTES) {
@@ -55,7 +71,7 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
         onInvalidateSpeech();
       }
     },
-    [onInvalidateSpeech]
+    [clearWakeUpTimer, onInvalidateSpeech]
   );
 
   const changeSourceLanguage = useCallback(
@@ -86,6 +102,7 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
     const currentOutput = translatedText.trim();
 
     trackerRef.current.invalidate();
+    clearWakeUpTimer();
     setIsLoading(false);
     setErrorCode(null);
     if (typeof onInvalidateSpeech === 'function') {
@@ -101,10 +118,11 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
     }
     // Always invalidate stale translation output after swapping
     setTranslatedText('');
-  }, [onInvalidateSpeech, sourceLang, targetLang, translatedText]);
+  }, [clearWakeUpTimer, onInvalidateSpeech, sourceLang, targetLang, translatedText]);
 
   const clearText = useCallback(() => {
     trackerRef.current.invalidate();
+    clearWakeUpTimer();
     setIsLoading(false);
     setSourceTextState('');
     setTranslatedText('');
@@ -112,7 +130,7 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
     if (typeof onInvalidateSpeech === 'function') {
       onInvalidateSpeech();
     }
-  }, [onInvalidateSpeech]);
+  }, [clearWakeUpTimer, onInvalidateSpeech]);
 
   const translate = useCallback(async () => {
     if (isLoading) {
@@ -127,10 +145,21 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
     }
 
     const { requestId, signal } = trackerRef.current.nextRequest();
+    clearWakeUpTimer();
     setIsLoading(true);
     setErrorCode(null);
     if (typeof onInvalidateSpeech === 'function') {
       onInvalidateSpeech();
+    }
+
+    // Only show wake-up status if evidence indicates server is not yet confirmed ready
+    const healthState = getServerHealthState();
+    if (healthState.status !== 'ready') {
+      wakeUpTimerRef.current = setTimeout(() => {
+        if (trackerRef.current.isCurrent(requestId)) {
+          setIsWakingUp(true);
+        }
+      }, 5000);
     }
 
     try {
@@ -140,6 +169,8 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
         targetLang,
         signal,
       });
+
+      clearWakeUpTimer();
 
       // Only apply result if this request is still the latest active request
       if (!trackerRef.current.isCurrent(requestId)) {
@@ -151,6 +182,7 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
       setErrorCode(null);
       return true;
     } catch (err) {
+      clearWakeUpTimer();
       if (!trackerRef.current.isCurrent(requestId)) {
         return false;
       }
@@ -166,7 +198,7 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
       }
       return false;
     }
-  }, [isLoading, onInvalidateSpeech, sourceLang, sourceText, targetLang]);
+  }, [clearWakeUpTimer, isLoading, onInvalidateSpeech, sourceLang, sourceText, targetLang]);
 
   const byteCount = getUtf8ByteLength(sourceText);
   const charCount = getCharacterCount(sourceText);
@@ -178,6 +210,7 @@ export function useTranslation({ onInvalidateSpeech } = {}) {
     sourceText,
     translatedText,
     isLoading,
+    isWakingUp,
     errorCode,
     byteCount,
     charCount,

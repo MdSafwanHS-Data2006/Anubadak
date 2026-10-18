@@ -521,7 +521,100 @@ class TestTranslatorValidation(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(is_junk_translation(junk), f"Expected '{junk}' to be rejected as junk")
         self.assertFalse(is_junk_translation("শুভ সকাল"))
         self.assertFalse(is_junk_translation("This is not a placeholder sentence."))
+        self.assertFalse(is_junk_translation("😊"))
+        self.assertFalse(is_junk_translation("হ্যালো! 😊"))
         self.assertEqual(decode_and_clean_text("Hola &amp; buenos d&#237;as"), "Hola & buenos días")
+
+    async def test_emoji_and_bengali_unicode_safe_handling(self) -> None:
+        text_with_emoji = "Hello! 😊 Have a wonderful day 🌟"
+        mock_output = "হ্যালো! 😊 একটি চমৎকার দিন কাটুক 🌟"
+        payload = {
+            "responseData": {"translatedText": mock_output, "match": 0.95},
+            "responseStatus": 200,
+            "matches": [
+                {
+                    "segment": text_with_emoji,
+                    "translation": mock_output,
+                    "match": 0.95,
+                    "quality": "90",
+                }
+            ],
+        }
+        async with make_mock_client(payload=payload) as client:
+            provider = MyMemoryProvider(self.settings, http_client=client)
+            result = await provider.translate(text_with_emoji, "en", "bn")
+        self.assertEqual(result.translated_text, mock_output)
+        self.assertIn("😊", result.translated_text)
+        self.assertIn("🌟", result.translated_text)
+        self.assertTrue(contains_bengali_script(result.translated_text))
+
+    async def test_multiline_and_contractions_preserve_formatting(self) -> None:
+        multiline_input = "Don't stop.\nIt's a beautiful morning.\nWe're almost there!"
+        multiline_output = "থামবেন না।\nএটি একটি সুন্দর সকাল।\nআমরা প্রায় পৌঁছে গেছি!"
+        payload = {
+            "responseData": {
+                "translatedText": "থামবেন না।\nএটি একটি সুন্দর সকাল।\nআমরা প্রায় পৌঁছে গেছি!",
+                "match": 0.95,
+            },
+            "responseStatus": 200,
+            "matches": [],
+        }
+        async with make_mock_client(payload=payload) as client:
+            provider = MyMemoryProvider(self.settings, http_client=client)
+            result = await provider.translate(multiline_input, "en", "bn")
+        self.assertEqual(result.translated_text, multiline_output)
+        self.assertIn("\n", result.translated_text)
+
+    async def test_mixed_bengali_english_script_support(self) -> None:
+        mixed_input = "আমি WhatsApp এবং Facebook ব্যবহার করি।"
+        mock_output = "I use WhatsApp and Facebook."
+        payload = {
+            "responseData": {"translatedText": mock_output, "match": 0.95},
+            "responseStatus": 200,
+            "matches": [],
+        }
+        async with make_mock_client(payload=payload) as client:
+            provider = MyMemoryProvider(self.settings, http_client=client)
+            result = await provider.translate(mixed_input, "bn", "en")
+        self.assertEqual(result.translated_text, mock_output)
+
+    def test_exact_byte_boundary_with_emojis_and_bengali(self) -> None:
+        # Each Bengali char = 3 bytes. Each emoji = 4 bytes.
+        # 160 Bengali chars = 480 bytes. 5 emojis = 20 bytes. Total = exactly 500 bytes.
+        exact_500_mixed = ("ক" * 160) + ("😊" * 5)
+        self.assertEqual(utf8_byte_length(exact_500_mixed), 500)
+        cleaned, src, tgt = validate_translation_Input(exact_500_mixed, "bn", "en")
+        self.assertEqual(cleaned, exact_500_mixed)
+
+        # 501 bytes (exceeds limit by 1 byte: 160*3=480 + 5*4=20 + 'a'=1 -> 501 bytes)
+        over_501_mixed = exact_500_mixed + "a"
+        self.assertEqual(utf8_byte_length(over_501_mixed), 501)
+        with self.assertRaises(InvalidInputError) as ctx:
+            validate_translation_Input(over_501_mixed, "bn", "en")
+        self.assertEqual(ctx.exception.code, "TEXT_TOO_LONG")
+
+    async def test_explicit_timeout_configuration_applied_to_client(self) -> None:
+        captured_timeout: List[Any] = []
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            captured_timeout.append(request.extensions.get("timeout"))
+            return httpx.Response(status_code=200, json={"responseData": {"translatedText": "Hola"}})
+
+        custom_settings = Settings(
+            request_timeout_seconds=22.5,
+            connect_timeout_seconds=7.5,
+        )
+        transport = httpx.MockTransport(handler)
+        async with httpx.AsyncClient(transport=transport) as client:
+            provider = MyMemoryProvider(custom_settings, http_client=client)
+            await provider.translate("Hello", "en", "es")
+
+        self.assertEqual(len(captured_timeout), 1)
+        self.assertIsNotNone(captured_timeout[0])
+        # httpx stores timeout values in extensions['timeout'] dict
+        timeout_dict = captured_timeout[0]
+        self.assertEqual(timeout_dict.get("connect"), 7.5)
+        self.assertEqual(timeout_dict.get("read"), 22.5)
 
 
 @unittest.skipUnless(

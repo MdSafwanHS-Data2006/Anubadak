@@ -223,6 +223,67 @@ class TestFastAPIEndpoints(unittest.TestCase):
         )
         self.assertIsNone(disallowed_res.headers.get("access-control-allow-origin"))
 
+    def test_cors_preflight_caching_and_trailing_slash_normalization(self) -> None:
+        # App with trailing slash in allowed_origins setting
+        settings = Settings(
+            allowed_origins=("https://anubadak.vercel.app/", "http://localhost:5173/"),
+        )
+        # Verify settings normalized trailing slashes
+        from config import _parse_csv_list
+
+        normalized = _parse_csv_list("https://anubadak.vercel.app/, http://localhost:5173/")
+        self.assertEqual(normalized, ("https://anubadak.vercel.app", "http://localhost:5173"))
+
+        app = create_app(settings=settings, provider=self.stub_provider)
+        client = TestClient(app)
+        res = client.options(
+            "/translate",
+            headers={
+                "Origin": "https://anubadak.vercel.app",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            res.headers.get("access-control-allow-origin"),
+            "https://anubadak.vercel.app",
+        )
+        self.assertEqual(res.headers.get("access-control-max-age"), "600")
+
+    def test_translate_emojis_punctuation_and_multiline_text(self) -> None:
+        complex_text = "Good morning! ☀️\nHow are you? 😊\nDon't worry."
+        res = self.client.post(
+            "/translate",
+            json={"text": complex_text, "source_lang": "en", "target_lang": "bn"},
+        )
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertTrue(body["translated_text"])
+        self.assertEqual(body["source_lang"], "en")
+        self.assertEqual(body["target_lang"], "bn")
+
+    def test_settings_timeout_configuration(self) -> None:
+        from config import load_settings
+        import os
+
+        old_timeout = os.environ.get("REQUEST_TIMEOUT_SECONDS")
+        old_connect = os.environ.get("CONNECT_TIMEOUT_SECONDS")
+        try:
+            os.environ["REQUEST_TIMEOUT_SECONDS"] = "25.0"
+            os.environ["CONNECT_TIMEOUT_SECONDS"] = "8.0"
+            s = load_settings()
+            self.assertEqual(s.request_timeout_seconds, 25.0)
+            self.assertEqual(s.connect_timeout_seconds, 8.0)
+        finally:
+            if old_timeout is not None:
+                os.environ["REQUEST_TIMEOUT_SECONDS"] = old_timeout
+            else:
+                os.environ.pop("REQUEST_TIMEOUT_SECONDS", None)
+            if old_connect is not None:
+                os.environ["CONNECT_TIMEOUT_SECONDS"] = old_connect
+            else:
+                os.environ.pop("CONNECT_TIMEOUT_SECONDS", None)
+
 
 if __name__ == "__main__":
     unittest.main()
